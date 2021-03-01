@@ -83,34 +83,7 @@ export class SocketManager {
         });
     }
 
-    /*getAdminSocketDataFor(roomId:string): AdminSocketData {
-        const data:AdminSocketData = {
-            rooms: {},
-            users: {},
-        }
-        const room = this.rooms.get(roomId);
-        if (room === undefined) {
-            return data;
-        }
-        const users = room.getUsers();
-        data.rooms[roomId] = users.size;
-        users.forEach(user => {
-            data.users[user.uuid] = true
-        })
-        return data;
-    }*/
-
     public async handleJoinRoom(socket: UserSocket, joinRoomMessage: JoinRoomMessage): Promise<{ room: GameRoom; user: User }> {
-        /*const positionMessage = joinRoomMessage.getPositionmessage();
-        if (positionMessage === undefined) {
-            // TODO: send error message?
-            throw new Error('Empty pointMessage found in JoinRoomMessage');
-        }*/
-
-        //const position = ProtobufUtils.toPointInterface(positionMessage);
-        //const viewport = client.viewport;
-
-        //this.sockets.set(client.userId, client); //todo: should this be at the end of the function?
 
         //join new previous room
         const {room, user} = await this.joinRoom(socket, joinRoomMessage);
@@ -119,32 +92,6 @@ export class SocketManager {
 
         const roomJoinedMessage = new RoomJoinedMessage();
         roomJoinedMessage.setTagList(joinRoomMessage.getTagList());
-        /*for (const thing of things) {
-            if (thing instanceof User) {
-                const player: ExSocketInterface|undefined = this.sockets.get(thing.id);
-                if (player === undefined) {
-                    console.warn('Something went wrong. The World contains a user "'+thing.id+"' but this user does not exist in the sockets list!");
-                    continue;
-                }
-
-                const userJoinedMessage = new UserJoinedMessage();
-                userJoinedMessage.setUserid(thing.id);
-                userJoinedMessage.setName(player.name);
-                userJoinedMessage.setCharacterlayersList(ProtobufUtils.toCharacterLayerMessages(player.characterLayers));
-                userJoinedMessage.setPosition(ProtobufUtils.toPositionMessage(player.position));
-
-                roomJoinedMessage.addUser(userJoinedMessage);
-                roomJoinedMessage.setTagList(joinRoomMessage.getTagList());
-            } else if (thing instanceof Group) {
-                const groupUpdateMessage = new GroupUpdateMessage();
-                groupUpdateMessage.setGroupid(thing.getId());
-                groupUpdateMessage.setPosition(ProtobufUtils.toPointMessage(thing.getPosition()));
-
-                roomJoinedMessage.addGroup(groupUpdateMessage);
-            } else {
-                console.error("Unexpected type for Movable returned by setViewport");
-            }
-        }*/
 
         for (const [itemId, item] of room.getItemsState().entries()) {
             const itemStateMessage = new ItemStateMessage();
@@ -158,8 +105,6 @@ export class SocketManager {
 
         const serverToClientMessage = new ServerToClientMessage();
         serverToClientMessage.setRoomjoinedmessage(roomJoinedMessage);
-
-        //user.socket.write(serverToClientMessage);
         console.log('SENDING MESSAGE roomJoinedMessage');
         socket.write(serverToClientMessage);
 
@@ -167,13 +112,6 @@ export class SocketManager {
             room,
             user
         };
-
-        /*const serverToClientMessage = new ServerToClientMessage();
-        serverToClientMessage.setRoomjoinedmessage(roomJoinedMessage);
-
-        if (!client.disconnecting) {
-            client.send(serverToClientMessage.serializeBinary().buffer, true);
-        }*/
 
     }
 

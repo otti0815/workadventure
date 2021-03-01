@@ -21,7 +21,6 @@ import {jwtTokenManager} from "../Services/JWTTokenManager";
 import {adminApi, CharacterTexture, FetchMemberDataByUuidResponse} from "../Services/AdminApi";
 import {SocketManager, socketManager} from "../Services/SocketManager";
 import {emitInBatch} from "../Services/IoSocketHelpers";
-import {clientEventsEmitter} from "../Services/ClientEventsEmitter";
 import {ADMIN_API_TOKEN, ADMIN_API_URL, SOCKET_IDLE_TIMER} from "../Enum/EnvironmentVariable";
 import {Zone} from "_Model/Zone";
 import {ExAdminSocketInterface} from "_Model/Websocket/ExAdminSocketInterface";
@@ -64,22 +63,6 @@ export class IoSocketController {
                 ws.disconnecting = false;
 
                 socketManager.handleAdminRoom(ws as ExAdminSocketInterface, ws.roomId as string);
-
-                /*ws.send('Data:'+JSON.stringify(socketManager.getAdminSocketDataFor(ws.roomId as string)));
-                ws.clientJoinCallback = (clientUUid: string, roomId: string) => {
-                    const wsroomId = ws.roomId as string;
-                    if(wsroomId === roomId) {
-                        ws.send('MemberJoin:'+clientUUid+';'+roomId);
-                    }
-                };
-                ws.clientLeaveCallback = (clientUUid: string, roomId: string) => {
-                    const wsroomId = ws.roomId as string;
-                    if(wsroomId === roomId) {
-                        ws.send('MemberLeave:'+clientUUid+';'+roomId);
-                    }
-                };
-                clientEventsEmitter.registerToClientJoin(ws.clientJoinCallback);
-                clientEventsEmitter.registerToClientLeave(ws.clientLeaveCallback);*/
             },
             message: (ws, arrayBuffer, isBinary): void => {
                 try {
@@ -106,7 +89,6 @@ export class IoSocketController {
                 const Client = (ws as ExAdminSocketInterface);
                 try {
                     Client.disconnecting = true;
-                    //leave room
                     socketManager.leaveAdminRoom(Client);
                 } catch (e) {
                     console.error('An error occurred on admin "disconnect"');
@@ -182,13 +164,11 @@ export class IoSocketController {
                         if (ADMIN_API_URL) {
                             try {
                                 const userData = await adminApi.fetchMemberDataByUuid(userUuid);
-                                //console.log('USERDATA', userData)
                                 memberTags = userData.tags;
                                 memberTextures = userData.textures;
                                 if (!room.anonymous && room.policyType === GameRoomPolicyTypes.USE_TAGS_POLICY && !room.canAccess(memberTags)) {
                                     throw new Error('No correct tags')
                                 }
-                                //console.log('access granted for user '+userUuid+' and room '+roomId);
                             } catch (e) {
                                 console.log('access not granted for user '+userUuid+' and room '+roomId);
                                 console.error(e);

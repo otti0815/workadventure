@@ -17,6 +17,9 @@ interface EventTargetFiles extends EventTarget {
     files: Array<File>;
 }
 
+/**
+ * @deprecated
+ */
 export class ConsoleGlobalMessageManager {
 
     private readonly divMainConsole: HTMLDivElement;
