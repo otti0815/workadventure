@@ -12,6 +12,7 @@ const gameMenuKey = 'gameMenu';
 const gameMenuIconKey = 'gameMenuIcon';
 const gameSettingsMenuKey = 'gameSettingsMenu';
 const gameShare = 'gameShare';
+const userList = 'userList';
 
 const closedSideMenuX = -200;
 const openedSideMenuX = 0;
@@ -23,10 +24,12 @@ export class MenuScene extends Phaser.Scene {
     private menuElement!: Phaser.GameObjects.DOMElement;
     private gameQualityMenuElement!: Phaser.GameObjects.DOMElement;
     private gameShareElement!: Phaser.GameObjects.DOMElement;
+    private userListElement!: Phaser.GameObjects.DOMElement;
     private gameReportElement!: ReportMenu;
     private sideMenuOpened = false;
     private settingsMenuOpened = false;
     private gameShareOpened = false;
+    private userListOpened = false;
     private gameQualityValue: number;
     private videoQualityValue: number;
     private menuButton!: Phaser.GameObjects.DOMElement;
@@ -43,6 +46,7 @@ export class MenuScene extends Phaser.Scene {
         this.load.html(gameMenuIconKey, 'resources/html/gameMenuIcon.html');
         this.load.html(gameSettingsMenuKey, 'resources/html/gameQualityMenu.html');
         this.load.html(gameShare, 'resources/html/gameShare.html');
+        this.load.html(userList, 'resources/html/userList.html');
         this.load.html(gameReportKey, gameReportRessource);
     }
 
@@ -67,6 +71,18 @@ export class MenuScene extends Phaser.Scene {
                 this.closeGameShare();
             }
         });
+
+        this.userListElement = this.add.dom(middleX, -400).createFromCache(userList);
+        MenuScene.revealMenusAfterInit(this.userListElement, userList);
+        this.userListElement.addListener('click');
+        this.userListElement.on('click',  (event:MouseEvent) => {
+            event.preventDefault();
+            if((event?.target as HTMLInputElement).id === 'userListFormClose') {
+                this.closeUserListWindow();
+            }
+        });
+
+
 
         this.gameReportElement = new ReportMenu(this, connectionManager.getConnexionType === GameConnexionTypes.anonymous);
         mediaManager.setShowReportModalCallBacks((userId, userName) => {
@@ -193,6 +209,45 @@ export class MenuScene extends Phaser.Scene {
         });
     }
 
+    private openUserListWindow(): void {
+        if (this.userListOpened) {
+            this.closeUserListWindow();
+            return;
+        }
+        this.closeAll();
+
+        // const userListWindow = this.userListElement.getChildByID('userListWindow') as HTMLInputElement;
+        // userListWindow.value = location.toString();
+        const allUsers = gameManager.getCurrentGameScene(this).getAllUsersOnMap();
+
+        const userListWindow = this.userListElement.getChildByID('listparent');
+        for (const singleUsername of allUsers) {
+
+            const node = document.createElement('li');
+            node.appendChild(document.createTextNode(singleUsername));
+            userListWindow.append(node);
+        }
+        // document.querySelector('ul').appendChild(node);
+        this.userListOpened = true;
+
+        let middleY = (window.innerHeight / 3) - (257);
+        if(middleY < 0){
+            middleY = 0;
+        }
+        let middleX = (window.innerWidth / 3) - 298;
+        if(middleX < 0){
+            middleX = 0;
+        }
+
+        this.tweens.add({
+            targets: this.userListElement,
+            y: middleY,
+            x: middleX,
+            duration: 1000,
+            ease: 'Power3'
+        });
+
+    }
 
     private openGameShare(): void{
         if (this.gameShareOpened) {
@@ -222,6 +277,20 @@ export class MenuScene extends Phaser.Scene {
             duration: 1000,
             ease: 'Power3'
         });
+    }
+
+    private closeUserListWindow(): void {
+        const userListWindow = this.userListElement.getChildByID('userListInfo') as HTMLParagraphElement;
+        userListWindow.innerText = '';
+        userListWindow.style.display = 'none';
+        this.userListOpened = false;
+        this.tweens.add({
+            targets: this.userListElement,
+            y: -400,
+            duration: 1000,
+            ease: 'Power3'
+        });
+
     }
 
     private closeGameShare(): void{
@@ -260,6 +329,9 @@ export class MenuScene extends Phaser.Scene {
                 break;
             case 'shareButton':
                 this.openGameShare();
+                break;
+            case 'onlineUserButton':
+                this.openUserListWindow();
                 break;
             case 'editGameSettingsButton':
                 this.openGameSettingsMenu();
@@ -300,5 +372,6 @@ export class MenuScene extends Phaser.Scene {
         this.closeGameQualityMenu();
         this.closeGameShare();
         this.gameReportElement.close();
+        this.closeUserListWindow();
     }
 }

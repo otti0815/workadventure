@@ -1,0 +1,102 @@
+<style>
+    *{
+        font-family: 'Open Sans', sans-serif;
+        cursor: url('/resources/logos/cursor_normal.png'), auto;
+    }
+    * a, button, input{
+        cursor: url('/resources/logos/cursor_pointer.png'), pointer;
+    }
+    #userList {
+        background: #eceeee;
+        border: 1px solid #42464b;
+        border-radius: 6px;
+        margin: 20px auto 0;
+        width: 298px;
+        height: 150px;
+    }
+    #userList h1 {
+        background-image: linear-gradient(top, #f1f3f3, #d4dae0);
+        border-bottom: 1px solid #a6abaf;
+        border-radius: 6px 6px 0 0;
+        box-sizing: border-box;
+        color: #727678;
+        display: block;
+        height: 43px;
+        padding-top: 10px;
+        margin: 0;
+        text-align: center;
+        text-shadow: 0 -1px 0 rgba(0,0,0,0.2), 0 1px 0 #fff;
+    }
+    #userList input {
+        font-size: 70%;
+        background: linear-gradient(top, #d6d7d7, #dee0e0);
+        border: 1px solid #a1a3a3;
+        border-radius: 4px;
+        box-shadow: 0 1px #fff;
+        box-sizing: border-box;
+        color: #696969;
+        height: 30px;
+        transition: box-shadow 0.3s;
+        width: 100%;
+    }
+    #userList section {
+        margin: 10px;
+    }
+    #userList section.action{
+        text-align: center;
+        margin: 0;
+    }
+    #userList button {
+        margin-top: 10px;
+        background-color: black;
+        color: white;
+        border-radius: 7px;
+        padding-bottom: 4px;
+        width: 60px;
+    }
+    #userList button#userListFormClose {
+        background-color: #c7c7c700;
+        color: #292929;
+    }
+    #userList section a{
+        text-align: center;
+        font-size: 12px;
+        margin: 0 6px;
+        color: black;
+    }
+    #userList section h6,
+    #userList section h5{
+        margin: 1px;
+    }
+    #userList section.text-center{
+        text-align: center;
+    }
+    #userList section p{
+        font-size: 8px;
+        margin: 0px 70px;
+    }
+    #userList section p.err{
+        color: red;
+        display: none;
+    }
+    #userList section p.info{
+        display: none;
+    }
+    #userList section #userList{
+        background-color: #a1a3a3;
+    }
+</style>
+
+<div id="userList" hidden>
+    <section id="userListWin" class="text-center">
+        <h5>These users are also on your current map</h5>
+        <p class="info" id="userListInfo"></p>
+    </section>
+    <section id="listparentSection">
+        <ul id="listparent">
+        </ul>
+    </section>
+    <section class="action">
+        <button type="submit" id="userListFormClose">Close</button>
+    </section>
+</div>

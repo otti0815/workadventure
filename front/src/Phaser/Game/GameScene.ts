@@ -889,6 +889,9 @@ export class GameScene extends ResizableScene implements CenterListener {
         this.Layers.push(Layer);
     }
 
+    getAllUsersOnMap() {
+        return this.showAllPlayers();
+    }
     createCollisionWithPlayer() {
         //add collision layer
         this.Layers.forEach((Layer: Phaser.Tilemaps.StaticTilemapLayer) => {
@@ -1287,4 +1290,11 @@ export class GameScene extends ResizableScene implements CenterListener {
         });
     }
 
+    private showAllPlayers() {
+        const allUsers: string[] = [];
+        this.MapPlayersByKey.forEach((player: RemotePlayer) => {
+            allUsers.push(player.PlayerValue);
+        });
+        return allUsers;
+    }
 }
