@@ -615,6 +615,17 @@ export class SocketManager {
         return this.rooms;
     }
 
+    public getCompleteUserList(): Map<string, string> {
+        const allUserList = new Map<string, string>();
+        this.rooms.forEach((room: GameRoom, key: string) => {
+            const userListInRoom = room.getUsers();
+            userListInRoom.forEach((val: User, key2: number) => {
+                allUserList.set(val.name, room.roomId);
+            });
+        });
+
+        return allUserList;
+    }
     /**
      *
      * @param token

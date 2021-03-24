@@ -67,6 +67,11 @@ message QueryJitsiJwtMessage {
   string tag = 2; // FIXME: rather than reading the tag from the query, we should read it from the current map!
 }
 
+message UserListMessage {
+  int32 askingUserId = 1;
+  string listComment = 2;
+}
+
 message ClientToServerMessage {
   oneof message {
     UserMovesMessage userMovesMessage = 2;
@@ -80,6 +85,7 @@ message ClientToServerMessage {
     StopGlobalMessage stopGlobalMessage = 10;
     ReportPlayerMessage reportPlayerMessage = 11;
     QueryJitsiJwtMessage queryJitsiJwtMessage = 12;
+    UserListMessage userListMessage = 13;
   }
 }
 

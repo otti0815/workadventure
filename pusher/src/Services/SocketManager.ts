@@ -570,6 +570,19 @@ export class SocketManager implements ZoneEventListener {
         });*/
     }
 
+    public handleUserListQuery(client: ExSocketInterface) {
+        // Let's see if the current client has
+        // const isAdmin = client.tags.includes(tag);
+        const sendJitsiJwtMessage = new SendJitsiJwtMessage();
+        sendJitsiJwtMessage.setJitsiroom(room);
+        sendJitsiJwtMessage.setJwt(jwt);
+
+        const serverToClientMessage = new ServerToClientMessage();
+        serverToClientMessage.setSendjitsijwtmessage(sendJitsiJwtMessage);
+
+        client.send(serverToClientMessage.serializeBinary().buffer, true);
+    }
+
     public emitBan(userUuid: string, message: string, type: string): void {
         const client = this.searchClientByUuid(userUuid);
         if(!client){
