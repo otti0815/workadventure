@@ -487,6 +487,8 @@ export class GameScene extends ResizableScene implements CenterListener {
                 this.openChatIcon.setVisible(true);
             })
 
+            // this.connection.onUserListMessage(())
+
             this.connection.onGroupDeleted((groupId: number) => {
                 audioManager.restoreVolume();
                 try {
@@ -533,6 +535,9 @@ export class GameScene extends ResizableScene implements CenterListener {
             this.connection.onStartJitsiRoom((jwt, room) => {
                 this.startJitsi(room, jwt);
             });
+            // this.connection.onCompl((jwt, room) => {
+            //     this.startJitsi(room, jwt);
+            // });
 
             // When connection is performed, let's connect SimplePeer
             this.simplePeer = new SimplePeer(this.connection, !this.room.isPublic, this.playerName);
@@ -891,6 +896,13 @@ export class GameScene extends ResizableScene implements CenterListener {
 
     getAllUsersOnMap() {
         return this.showAllPlayers();
+    }
+
+
+
+    getAllUsersInHouse() {
+        // this.connection.emitUserListMessage(("myRoom", "2"));
+        
     }
     createCollisionWithPlayer() {
         //add collision layer
@@ -1297,4 +1309,5 @@ export class GameScene extends ResizableScene implements CenterListener {
         });
         return allUsers;
     }
+
 }

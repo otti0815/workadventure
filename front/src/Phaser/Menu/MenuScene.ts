@@ -6,6 +6,7 @@ import {mediaManager} from "../../WebRtc/MediaManager";
 import {gameReportKey, gameReportRessource, ReportMenu} from "./ReportMenu";
 import {connectionManager} from "../../Connexion/ConnectionManager";
 import {GameConnexionTypes} from "../../Url/UrlManager";
+import {UserDetailsMessage} from "../../Messages/generated/messages_pb";
 
 export const MenuSceneName = 'MenuScene';
 const gameMenuKey = 'gameMenu';
@@ -33,6 +34,10 @@ export class MenuScene extends Phaser.Scene {
     private gameQualityValue: number;
     private videoQualityValue: number;
     private menuButton!: Phaser.GameObjects.DOMElement;
+
+    private wasCreated = false;
+
+    private userList = new Array<UserDetailsMessage>();
 
     constructor() {
         super({key: MenuSceneName});
@@ -83,7 +88,6 @@ export class MenuScene extends Phaser.Scene {
         });
 
 
-
         this.gameReportElement = new ReportMenu(this, connectionManager.getConnexionType === GameConnexionTypes.anonymous);
         mediaManager.setShowReportModalCallBacks((userId, userName) => {
             this.closeAll();
@@ -104,6 +108,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     //todo put this method in a parent menuElement class
+
     static revealMenusAfterInit(menuElement: Phaser.GameObjects.DOMElement, rootDomId: string) {
         //Dom elements will appear inside the viewer screen when creating before being moved out of it, which create a flicker effect.
         //To prevent this, we put a 'hidden' attribute on the root element, we remove it only after the init is done.
@@ -121,6 +126,43 @@ export class MenuScene extends Phaser.Scene {
         this.closeAll();
         this.sideMenuOpened = true;
         this.menuButton.getChildByID('openMenuButton').innerHTML = 'X';
+
+        if (!this.wasCreated) {
+            gameManager.getCurrentGameScene(this).connection.onUserListMessage((userList, message) => {
+                // console.log(userList);
+                const userListWindow = this.userListElement.getChildByID('listparent');
+                userList = userList.sort((n1: UserDetailsMessage, n2: UserDetailsMessage) => {
+                    if (n1.getRoomid() > n2.getRoomid()) {
+                        return 1;
+                    }
+                    if (n1.getRoomid() < n2.getRoomid()) {
+                        return -1;
+                    }
+                    return 0;
+                });
+                let groupChange = "";
+                userListWindow.textContent = '';
+                for (const singleUsername of userList) {
+                    if (groupChange !== singleUsername.getRoomid()) {
+                        groupChange = singleUsername.getRoomid();
+                        // console.log("new room set");
+                        const node = document.createElement('li');
+                        const innerNode = document.createElement('b');
+                        innerNode.appendChild(document.createTextNode(singleUsername.getRoomid().substr(singleUsername.getRoomid().lastIndexOf("/")).replace(".json","")));
+                        node.prepend(innerNode);
+                        
+                        userListWindow.append(node);
+                    }
+                    const node = document.createElement('li');
+                    node.appendChild(document.createTextNode(singleUsername.getUsername()));
+                    userListWindow.append(node);
+
+
+                }
+            });
+            this.wasCreated = true;
+        }
+
         if (gameManager.getCurrentGameScene(this).connection && gameManager.getCurrentGameScene(this).connection.isAdmin()) {
             const adminSection = this.menuElement.getChildByID('adminConsoleSection') as HTMLElement;
             adminSection.hidden = false;
@@ -220,13 +262,20 @@ export class MenuScene extends Phaser.Scene {
         // userListWindow.value = location.toString();
         const allUsers = gameManager.getCurrentGameScene(this).getAllUsersOnMap();
 
-        const userListWindow = this.userListElement.getChildByID('listparent');
-        for (const singleUsername of allUsers) {
+        // gameManager.getCurrentGameScene(this).getAllUsersInHouse();
+        gameManager.getCurrentGameScene(this).connection.emitUserListMessage();
 
-            const node = document.createElement('li');
-            node.appendChild(document.createTextNode(singleUsername));
-            userListWindow.append(node);
-        }
+        // this.gameManager.getconnection.onStartJitsiRoom((jwt, room) => {
+        //     this.startJitsi(room, jwt);
+        // });
+
+        // const userListWindow = this.userListElement.getChildByID('listparent');
+        // for (const singleUsername of allUsers) {
+        //
+        //     const node = document.createElement('li');
+        //     node.appendChild(document.createTextNode(singleUsername));
+        //     userListWindow.append(node);
+        // }
         // document.querySelector('ul').appendChild(node);
         this.userListOpened = true;
 

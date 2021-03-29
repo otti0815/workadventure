@@ -170,6 +170,14 @@ message RoomJoinedMessage {
   repeated string tag = 5;
 }
 
+message UserDetailsMessage {
+	string userName = 1;
+	string roomId = 2;
+}
+message CompleteUserListMessage {
+	repeated UserDetailsMessage userName = 1;
+}
+
 message WebRtcStartMessage {
   int32 userId = 1;
   string name = 2;
@@ -223,6 +231,8 @@ message ServerToClientMessage {
     SendJitsiJwtMessage sendJitsiJwtMessage = 11;
     SendUserMessage sendUserMessage = 12;
     BanUserMessage banUserMessage = 13;
+    CompleteUserListMessage completeUserListMessage = 14;
+
   }
 }
 
