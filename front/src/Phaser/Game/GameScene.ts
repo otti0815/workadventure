@@ -487,6 +487,8 @@ export class GameScene extends ResizableScene implements CenterListener {
                 this.openChatIcon.setVisible(true);
             })
 
+            // this.connection.onUserListMessage(())
+
             this.connection.onGroupDeleted((groupId: number) => {
                 audioManager.restoreVolume();
                 try {
@@ -533,6 +535,9 @@ export class GameScene extends ResizableScene implements CenterListener {
             this.connection.onStartJitsiRoom((jwt, room) => {
                 this.startJitsi(room, jwt);
             });
+            // this.connection.onCompl((jwt, room) => {
+            //     this.startJitsi(room, jwt);
+            // });
 
             // When connection is performed, let's connect SimplePeer
             this.simplePeer = new SimplePeer(this.connection, !this.room.isPublic, this.playerName);
@@ -889,6 +894,16 @@ export class GameScene extends ResizableScene implements CenterListener {
         this.Layers.push(Layer);
     }
 
+    getAllUsersOnMap() {
+        return this.showAllPlayers();
+    }
+
+
+
+    getAllUsersInHouse() {
+        // this.connection.emitUserListMessage(("myRoom", "2"));
+        
+    }
     createCollisionWithPlayer() {
         //add collision layer
         this.Layers.forEach((Layer: Phaser.Tilemaps.StaticTilemapLayer) => {
@@ -1285,6 +1300,14 @@ export class GameScene extends ResizableScene implements CenterListener {
             subTitle: 'You was banned of WorkAdventure',
             message: 'If you want more information, you can contact us: workadventure@thecodingmachine.com'
         });
+    }
+
+    private showAllPlayers() {
+        const allUsers: string[] = [];
+        this.MapPlayersByKey.forEach((player: RemotePlayer) => {
+            allUsers.push(player.PlayerValue);
+        });
+        return allUsers;
     }
 
 }

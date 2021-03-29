@@ -23,7 +23,11 @@ import {
     AdminPusherToBackMessage,
     ServerToAdminClientMessage,
     SendUserMessage,
-    BanUserMessage, UserJoinedRoomMessage, UserLeftRoomMessage
+    BanUserMessage,
+    UserJoinedRoomMessage,
+    UserLeftRoomMessage,
+    UserListMessage,
+    CompleteUserListMessage, UserDetailsMessage
 } from "../Messages/generated/messages_pb";
 import {PointInterface} from "../Model/Websocket/PointInterface";
 import {ProtobufUtils} from "../Model/Websocket/ProtobufUtils";
@@ -568,6 +572,28 @@ export class SocketManager implements ZoneEventListener {
                 console.error('Error while sending admin message', error);
             }
         });*/
+    }
+
+    public handleUserListQuery(client: ExSocketInterface) {
+        // Let's see if the current client has
+        // const isAdmin = client.tags.includes(tag);
+        console.log('handleUserListQuery');
+        const completeUserListMsg = new CompleteUserListMessage();
+
+
+
+
+        // const allRooms = this.getWorlds();
+        for(const socket of this.sockets.values()){
+            const udm = new UserDetailsMessage();
+            udm.setRoomid(socket.roomId);
+            udm.setUsername(socket.name);
+            completeUserListMsg.addUsername(udm);
+        }
+        const serverToClientMessage = new ServerToClientMessage();
+        serverToClientMessage.setCompleteuserlistmessage(completeUserListMsg);
+        client.send(serverToClientMessage.serializeBinary().buffer, true);
+        
     }
 
     public emitBan(userUuid: string, message: string, type: string): void {

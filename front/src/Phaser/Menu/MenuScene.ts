@@ -6,12 +6,14 @@ import {mediaManager} from "../../WebRtc/MediaManager";
 import {gameReportKey, gameReportRessource, ReportMenu} from "./ReportMenu";
 import {connectionManager} from "../../Connexion/ConnectionManager";
 import {GameConnexionTypes} from "../../Url/UrlManager";
+import {UserDetailsMessage} from "../../Messages/generated/messages_pb";
 
 export const MenuSceneName = 'MenuScene';
 const gameMenuKey = 'gameMenu';
 const gameMenuIconKey = 'gameMenuIcon';
 const gameSettingsMenuKey = 'gameSettingsMenu';
 const gameShare = 'gameShare';
+const userList = 'userList';
 
 const closedSideMenuX = -200;
 const openedSideMenuX = 0;
@@ -23,13 +25,19 @@ export class MenuScene extends Phaser.Scene {
     private menuElement!: Phaser.GameObjects.DOMElement;
     private gameQualityMenuElement!: Phaser.GameObjects.DOMElement;
     private gameShareElement!: Phaser.GameObjects.DOMElement;
+    private userListElement!: Phaser.GameObjects.DOMElement;
     private gameReportElement!: ReportMenu;
     private sideMenuOpened = false;
     private settingsMenuOpened = false;
     private gameShareOpened = false;
+    private userListOpened = false;
     private gameQualityValue: number;
     private videoQualityValue: number;
     private menuButton!: Phaser.GameObjects.DOMElement;
+
+    private wasCreated = false;
+
+    private userList = new Array<UserDetailsMessage>();
 
     constructor() {
         super({key: MenuSceneName});
@@ -43,6 +51,7 @@ export class MenuScene extends Phaser.Scene {
         this.load.html(gameMenuIconKey, 'resources/html/gameMenuIcon.html');
         this.load.html(gameSettingsMenuKey, 'resources/html/gameQualityMenu.html');
         this.load.html(gameShare, 'resources/html/gameShare.html');
+        this.load.html(userList, 'resources/html/userList.html');
         this.load.html(gameReportKey, gameReportRessource);
     }
 
@@ -68,6 +77,17 @@ export class MenuScene extends Phaser.Scene {
             }
         });
 
+        this.userListElement = this.add.dom(middleX, -400).createFromCache(userList);
+        MenuScene.revealMenusAfterInit(this.userListElement, userList);
+        this.userListElement.addListener('click');
+        this.userListElement.on('click',  (event:MouseEvent) => {
+            event.preventDefault();
+            if((event?.target as HTMLInputElement).id === 'userListFormClose') {
+                this.closeUserListWindow();
+            }
+        });
+
+
         this.gameReportElement = new ReportMenu(this, connectionManager.getConnexionType === GameConnexionTypes.anonymous);
         mediaManager.setShowReportModalCallBacks((userId, userName) => {
             this.closeAll();
@@ -88,6 +108,7 @@ export class MenuScene extends Phaser.Scene {
     }
 
     //todo put this method in a parent menuElement class
+
     static revealMenusAfterInit(menuElement: Phaser.GameObjects.DOMElement, rootDomId: string) {
         //Dom elements will appear inside the viewer screen when creating before being moved out of it, which create a flicker effect.
         //To prevent this, we put a 'hidden' attribute on the root element, we remove it only after the init is done.
@@ -105,6 +126,43 @@ export class MenuScene extends Phaser.Scene {
         this.closeAll();
         this.sideMenuOpened = true;
         this.menuButton.getChildByID('openMenuButton').innerHTML = 'X';
+
+        if (!this.wasCreated) {
+            gameManager.getCurrentGameScene(this).connection.onUserListMessage((userList, message) => {
+                // console.log(userList);
+                const userListWindow = this.userListElement.getChildByID('listparent');
+                userList = userList.sort((n1: UserDetailsMessage, n2: UserDetailsMessage) => {
+                    if (n1.getRoomid() > n2.getRoomid()) {
+                        return 1;
+                    }
+                    if (n1.getRoomid() < n2.getRoomid()) {
+                        return -1;
+                    }
+                    return 0;
+                });
+                let groupChange = "";
+                userListWindow.textContent = '';
+                for (const singleUsername of userList) {
+                    if (groupChange !== singleUsername.getRoomid()) {
+                        groupChange = singleUsername.getRoomid();
+                        // console.log("new room set");
+                        const node = document.createElement('li');
+                        const innerNode = document.createElement('b');
+                        innerNode.appendChild(document.createTextNode(singleUsername.getRoomid().substr(singleUsername.getRoomid().lastIndexOf("/")).replace(".json","")));
+                        node.prepend(innerNode);
+                        
+                        userListWindow.append(node);
+                    }
+                    const node = document.createElement('li');
+                    node.appendChild(document.createTextNode(singleUsername.getUsername()));
+                    userListWindow.append(node);
+
+
+                }
+            });
+            this.wasCreated = true;
+        }
+
         if (gameManager.getCurrentGameScene(this).connection && gameManager.getCurrentGameScene(this).connection.isAdmin()) {
             const adminSection = this.menuElement.getChildByID('adminConsoleSection') as HTMLElement;
             adminSection.hidden = false;
@@ -193,6 +251,52 @@ export class MenuScene extends Phaser.Scene {
         });
     }
 
+    private openUserListWindow(): void {
+        if (this.userListOpened) {
+            this.closeUserListWindow();
+            return;
+        }
+        this.closeAll();
+
+        // const userListWindow = this.userListElement.getChildByID('userListWindow') as HTMLInputElement;
+        // userListWindow.value = location.toString();
+        const allUsers = gameManager.getCurrentGameScene(this).getAllUsersOnMap();
+
+        // gameManager.getCurrentGameScene(this).getAllUsersInHouse();
+        gameManager.getCurrentGameScene(this).connection.emitUserListMessage();
+
+        // this.gameManager.getconnection.onStartJitsiRoom((jwt, room) => {
+        //     this.startJitsi(room, jwt);
+        // });
+
+        // const userListWindow = this.userListElement.getChildByID('listparent');
+        // for (const singleUsername of allUsers) {
+        //
+        //     const node = document.createElement('li');
+        //     node.appendChild(document.createTextNode(singleUsername));
+        //     userListWindow.append(node);
+        // }
+        // document.querySelector('ul').appendChild(node);
+        this.userListOpened = true;
+
+        let middleY = (window.innerHeight / 3) - (257);
+        if(middleY < 0){
+            middleY = 0;
+        }
+        let middleX = (window.innerWidth / 3) - 298;
+        if(middleX < 0){
+            middleX = 0;
+        }
+
+        this.tweens.add({
+            targets: this.userListElement,
+            y: middleY,
+            x: middleX,
+            duration: 1000,
+            ease: 'Power3'
+        });
+
+    }
 
     private openGameShare(): void{
         if (this.gameShareOpened) {
@@ -222,6 +326,20 @@ export class MenuScene extends Phaser.Scene {
             duration: 1000,
             ease: 'Power3'
         });
+    }
+
+    private closeUserListWindow(): void {
+        const userListWindow = this.userListElement.getChildByID('userListInfo') as HTMLParagraphElement;
+        userListWindow.innerText = '';
+        userListWindow.style.display = 'none';
+        this.userListOpened = false;
+        this.tweens.add({
+            targets: this.userListElement,
+            y: -400,
+            duration: 1000,
+            ease: 'Power3'
+        });
+
     }
 
     private closeGameShare(): void{
@@ -260,6 +378,9 @@ export class MenuScene extends Phaser.Scene {
                 break;
             case 'shareButton':
                 this.openGameShare();
+                break;
+            case 'onlineUserButton':
+                this.openUserListWindow();
                 break;
             case 'editGameSettingsButton':
                 this.openGameSettingsMenu();
@@ -300,5 +421,6 @@ export class MenuScene extends Phaser.Scene {
         this.closeGameQualityMenu();
         this.closeGameShare();
         this.gameReportElement.close();
+        this.closeUserListWindow();
     }
 }

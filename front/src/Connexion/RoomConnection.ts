@@ -27,7 +27,7 @@ import {
     SendJitsiJwtMessage,
     CharacterLayerMessage,
     PingMessage,
-    SendUserMessage
+    SendUserMessage, UserListMessage, CompleteUserListMessage, UserDetailsMessage
 } from "../Messages/generated/messages_pb"
 
 import {UserSimplePeerInterface} from "../WebRtc/SimplePeer";
@@ -52,6 +52,8 @@ export class RoomConnection implements RoomConnection {
     private static websocketFactory: null|((url: string)=>any) = null; // eslint-disable-line @typescript-eslint/no-explicit-any
     private closed: boolean = false;
     private tags: string[] = [];
+
+    private userList = new Array<UserDetailsMessage>();
 
     public static setWebsocketFactory(websocketFactory: (url: string)=>any): void { // eslint-disable-line @typescript-eslint/no-explicit-any
         RoomConnection.websocketFactory = websocketFactory;
@@ -186,6 +188,8 @@ export class RoomConnection implements RoomConnection {
                 this.dispatch(EventMessage.START_JITSI_ROOM, message.getSendjitsijwtmessage());
             } else if (message.hasSendusermessage()) {
                 this.dispatch(EventMessage.USER_MESSAGE, message.getSendusermessage());
+            } else if (message.hasCompleteuserlistmessage()) {
+                this.dispatch(EventMessage.USERLIST_MESSAGE, message.getCompleteuserlistmessage());
             } else {
                 throw new Error('Unknown message received');
             }
@@ -286,6 +290,15 @@ export class RoomConnection implements RoomConnection {
         this.socket.send(clientToServerMessage.serializeBinary().buffer);
     }
 
+    public askForUserList(): void {
+        const userListMessage = new UserListMessage();
+        userListMessage.setAskinguserid(1);
+        userListMessage.setListcomment("bla");
+        const clientToServerMessage = new ClientToServerMessage();
+        clientToServerMessage.setUserlistmessage(userListMessage);
+
+        this.socket.send(clientToServerMessage.serializeBinary().buffer);
+    }
     public setViewport(viewport: ViewportInterface): void {
         const viewportMessage = new ViewportMessage();
         viewportMessage.setTop(Math.round(viewport.top));
@@ -579,6 +592,25 @@ export class RoomConnection implements RoomConnection {
         clientToServerMessage.setQueryjitsijwtmessage(queryJitsiJwtMessage);
 
         this.socket.send(clientToServerMessage.serializeBinary().buffer);
+    }
+
+    public emitUserListMessage(): void {
+        console.log('emitUserListMessage for room');
+        const userListMessage = new UserListMessage();
+        userListMessage.setListcomment("foobar");
+        userListMessage.setAskinguserid(new Number(this.userId).valueOf());
+        const clientToServerMessage = new ClientToServerMessage();
+        clientToServerMessage.setUserlistmessage(userListMessage);
+
+        this.socket.send(clientToServerMessage.serializeBinary().buffer);
+
+    }
+
+    public onUserListMessage(callback: (type: Array<UserDetailsMessage>, message: string) => void) {
+        this.onMessage(EventMessage.USERLIST_MESSAGE, (message: CompleteUserListMessage) => {
+            this.userList = message.getUsernameList();
+            callback(message.getUsernameList(), "nachricht");
+        });
     }
 
     public onStartJitsiRoom(callback: (jwt: string, room: string) => void): void {

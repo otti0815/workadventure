@@ -10,6 +10,7 @@ export class MapController extends BaseController{
         super();
         this.App = App;
         this.getMapUrl();
+        this.getUserListInWorld();
     }
 
 
@@ -64,5 +65,26 @@ export class MapController extends BaseController{
             })();
 
         });
+    }
+
+    getUserListInWorld() {
+        this.App.options("/userlist", (res: HttpResponse, req: HttpRequest) => {
+            this.addCorsHeaders(res);
+
+            res.end();
+        });
+
+        this.App.get("/userlist", (res: HttpResponse, req: HttpRequest) => {
+
+            res.onAborted(() => {
+                console.warn('/userlist request was aborted');
+            });
+
+            res.writeStatus("200 OK");
+            this.addCorsHeaders(res);
+            res.end(JSON.stringify(this.getUserListInWorld()));
+
+        });
+
     }
 }

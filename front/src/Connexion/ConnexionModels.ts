@@ -32,6 +32,7 @@ export enum EventMessage{
 
     TELEPORT = "teleport",
     USER_MESSAGE = "user-message",
+    USERLIST_MESSAGE = "userlist-message",
     START_JITSI_ROOM = "start-jitsi-room",
 }
 

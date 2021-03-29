@@ -323,6 +323,8 @@ export class IoSocketController {
                     socketManager.handleReportMessage(client, message.getReportplayermessage() as ReportPlayerMessage);
                 } else if (message.hasQueryjitsijwtmessage()){
                     socketManager.handleQueryJitsiJwtMessage(client, message.getQueryjitsijwtmessage() as QueryJitsiJwtMessage);
+                } else if (message.hasUserlistmessage()){
+                    socketManager.handleUserListQuery(client);
                 }
 
                     /* Ok is false if backpressure was built up, wait for drain */
