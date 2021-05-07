@@ -31,6 +31,9 @@ export const TRIGGER_JITSI_PROPERTIES = 'jitsiTrigger';
 export const WEBSITE_MESSAGE_PROPERTIES = 'openWebsiteTriggerMessage';
 export const JITSI_MESSAGE_PROPERTIES = 'jitsiTriggerMessage';
 
+export const AUDIO_VOLUME_PROPERTY = 'audioVolume';
+export const AUDIO_LOOP_PROPERTY = 'audioLoop';
+
 /**
  * This class is in charge of the video-conference layout.
  * It receives positioning requests for videos and does its best to place them on the screen depending on the active layout mode.
@@ -337,17 +340,13 @@ class LayoutManager {
         const mainContainer = HtmlUtils.getElementByIdOrFail<HTMLDivElement>('main-container');
         mainContainer.appendChild(div);
 
-        const callBackFunctionTrigger = (() => {
-            console.log('user click on space => ', id);
-            callBack();
-        });
-
         //add trigger action
-        this.actionButtonTrigger.set(id, callBackFunctionTrigger);
-        userInputManager.addSpaceEventListner(callBackFunctionTrigger);
+        div.onpointerdown = () => callBack();
+        this.actionButtonTrigger.set(id, callBack);
+        userInputManager.addSpaceEventListner(callBack);
     }
 
-    public removeActionButton(id: string, userInputManager: UserInputManager){
+    public removeActionButton(id: string, userInputManager?: UserInputManager){
         //delete previous element
         const previousDiv = this.actionButtonInformation.get(id);
         if(previousDiv){
@@ -355,9 +354,44 @@ class LayoutManager {
             this.actionButtonInformation.delete(id);
         }
         const previousEventCallback = this.actionButtonTrigger.get(id);
-        if(previousEventCallback){
+        if(previousEventCallback && userInputManager){
             userInputManager.removeSpaceEventListner(previousEventCallback);
         }
+    }
+
+    public addInformation(id: string, text: string,  callBack?: Function, userInputManager?: UserInputManager){
+        //delete previous element
+        for ( const [key, value] of this.actionButtonInformation ) {
+            this.removeActionButton(key, userInputManager);
+        }
+
+        //create div and text html component
+        const p = document.createElement('p');
+        p.classList.add('action-body');
+        p.innerText = text;
+
+        const div = document.createElement('div');
+        div.classList.add('action');
+        div.classList.add(id);
+        div.id = id;
+        div.appendChild(p);
+
+        this.actionButtonInformation.set(id, div);
+
+        const mainContainer = HtmlUtils.getElementByIdOrFail<HTMLDivElement>('main-container');
+        mainContainer.appendChild(div);
+        //add trigger action
+        if(callBack){
+            div.onpointerdown = () => {
+                callBack();
+                this.removeActionButton(id, userInputManager);
+            };
+        }
+
+        //remove it after 10 sec
+        setTimeout(() => {
+            this.removeActionButton(id, userInputManager);
+        }, 10000)
     }
 }
 

@@ -1,10 +1,9 @@
 <style>
     *{
-        font-family: 'Open Sans', sans-serif;
-        cursor: url('/resources/logos/cursor_normal.png'), auto;
+        font-family: PixelFont-7,monospace!important;
     }
-    * a, button, select{
-        cursor: url('/resources/logos/cursor_pointer.png'), pointer;
+    #gameMenu main{
+        margin-top: 15px;
     }
     #gameMenu button {
         background-color: black;
@@ -23,6 +22,21 @@
         width: 32px;
         cursor: url('/resources/logos/cursor_pointer.png'), pointer;
     }
+    @media only screen and (max-height: 700px) {
+        #gameMenu main {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-end;
+            flex-wrap: wrap;
+            margin-top: 0;
+        }
+        #gameMenu section{
+            margin: 2px;
+        }
+        section#socialLinks{
+            position: relative;
+        }
+    }
 </style>
 
 <div id="gameMenu" hidden>
@@ -38,7 +52,13 @@
             <button id="changeSkinButton">Edit skin</button>
         </section>
         <section>
+            <button id="changeCompanionButton">Edit companion</button>
+        </section>
+        <section>
             <button id="editGameSettingsButton">Settings</button>
+        </section>
+        <section>
+            <button id="toggleFullscreen">Toggle fullscreen</button>
         </section>
         <section>
             <button id="sparkButton">Create map</button>

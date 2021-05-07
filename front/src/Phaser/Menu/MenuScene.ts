@@ -1,11 +1,14 @@
 import {LoginScene, LoginSceneName} from "../Login/LoginScene";
 import {SelectCharacterScene, SelectCharacterSceneName} from "../Login/SelectCharacterScene";
+import {SelectCompanionScene, SelectCompanionSceneName} from "../Login/SelectCompanionScene";
 import {gameManager} from "../Game/GameManager";
 import {localUserStore} from "../../Connexion/LocalUserStore";
 import {mediaManager} from "../../WebRtc/MediaManager";
 import {gameReportKey, gameReportRessource, ReportMenu} from "./ReportMenu";
 import {connectionManager} from "../../Connexion/ConnectionManager";
 import {GameConnexionTypes} from "../../Url/UrlManager";
+import {WarningContainer, warningContainerHtml, warningContainerKey} from "../Components/WarningContainer";
+import {worldFullWarningStream} from "../../Connexion/WorldFullWarningStream";
 
 export const MenuSceneName = 'MenuScene';
 const gameMenuKey = 'gameMenu';
@@ -13,7 +16,7 @@ const gameMenuIconKey = 'gameMenuIcon';
 const gameSettingsMenuKey = 'gameSettingsMenu';
 const gameShare = 'gameShare';
 
-const closedSideMenuX = -200;
+const closedSideMenuX = -1000;
 const openedSideMenuX = 0;
 
 /**
@@ -30,6 +33,8 @@ export class MenuScene extends Phaser.Scene {
     private gameQualityValue: number;
     private videoQualityValue: number;
     private menuButton!: Phaser.GameObjects.DOMElement;
+    private warningContainer: WarningContainer | null = null;
+    private warningContainerTimeout: NodeJS.Timeout | null = null;
 
     constructor() {
         super({key: MenuSceneName});
@@ -44,6 +49,7 @@ export class MenuScene extends Phaser.Scene {
         this.load.html(gameSettingsMenuKey, 'resources/html/gameQualityMenu.html');
         this.load.html(gameShare, 'resources/html/gameShare.html');
         this.load.html(gameReportKey, gameReportRessource);
+        this.load.html(warningContainerKey, warningContainerHtml);
     }
 
     create() {
@@ -85,6 +91,8 @@ export class MenuScene extends Phaser.Scene {
 
         this.menuElement.addListener('click');
         this.menuElement.on('click', this.onMenuClick.bind(this));
+
+        worldFullWarningStream.stream.subscribe(() => this.showWorldCapacityWarning());
     }
 
     //todo put this method in a parent menuElement class
@@ -97,7 +105,12 @@ export class MenuScene extends Phaser.Scene {
     }
 
     public revealMenuIcon(): void {
-        (this.menuButton.getChildByID('menuIcon') as HTMLElement).hidden = false
+        //TODO fix me: add try catch because at the same time, 'this.menuButton' variable doesn't exist and there is error on 'getChildByID' function
+        try {
+            (this.menuButton.getChildByID('menuIcon') as HTMLElement).hidden = false;
+        } catch (err) {
+            console.error(err);
+        }
     }
 
     openSideMenu() {
@@ -105,7 +118,8 @@ export class MenuScene extends Phaser.Scene {
         this.closeAll();
         this.sideMenuOpened = true;
         this.menuButton.getChildByID('openMenuButton').innerHTML = 'X';
-        if (gameManager.getCurrentGameScene(this).connection && gameManager.getCurrentGameScene(this).connection.isAdmin()) {
+        const connection = gameManager.getCurrentGameScene(this).connection;
+        if (connection && connection.isAdmin()) {
             const adminSection = this.menuElement.getChildByID('adminConsoleSection') as HTMLElement;
             adminSection.hidden = false;
         }
@@ -120,6 +134,21 @@ export class MenuScene extends Phaser.Scene {
             duration: 500,
             ease: 'Power3'
         });
+    }
+
+    private showWorldCapacityWarning() {
+        if (!this.warningContainer) {
+            this.warningContainer = new WarningContainer(this);
+        }
+        if (this.warningContainerTimeout) {
+            clearTimeout(this.warningContainerTimeout);
+        }
+        this.warningContainerTimeout = setTimeout(() => {
+            this.warningContainer?.destroy();
+            this.warningContainer = null
+            this.warningContainerTimeout = null
+        }, 120000);
+
     }
 
     private closeSideMenu(): void {
@@ -163,11 +192,11 @@ export class MenuScene extends Phaser.Scene {
             }
         });
 
-        let middleY = (window.innerHeight / 3) - (257);
+        let middleY = this.scale.height / 2 - 392/2;
         if(middleY < 0){
             middleY = 0;
         }
-        let middleX = (window.innerWidth / 3) - 298;
+        let middleX = this.scale.width / 2 - 457/2;
         if(middleX < 0){
             middleX = 0;
         }
@@ -207,11 +236,11 @@ export class MenuScene extends Phaser.Scene {
 
         this.gameShareOpened = true;
 
-        let middleY = (window.innerHeight / 3) - (257);
+        let middleY = this.scale.height / 2 - 85;
         if(middleY < 0){
             middleY = 0;
         }
-        let middleX = (window.innerWidth / 3) - 298;
+        let middleX = this.scale.width / 2 - 200;
         if(middleX < 0){
             middleX = 0;
         }
@@ -255,6 +284,10 @@ export class MenuScene extends Phaser.Scene {
                 this.closeSideMenu();
                 gameManager.leaveGame(this, SelectCharacterSceneName, new SelectCharacterScene());
                 break;
+            case 'changeCompanionButton':
+                this.closeSideMenu();
+                gameManager.leaveGame(this, SelectCompanionSceneName, new SelectCompanionScene());
+                break;
             case 'closeButton':
                 this.closeSideMenu();
                 break;
@@ -263,6 +296,9 @@ export class MenuScene extends Phaser.Scene {
                 break;
             case 'editGameSettingsButton':
                 this.openGameSettingsMenu();
+                break;
+            case 'toggleFullscreen':
+                this.toggleFullscreen();
                 break;
             case 'adminConsoleButton':
                 gameManager.getCurrentGameScene(this).ConsoleGlobalMessageManager.activeMessageConsole();
@@ -292,7 +328,9 @@ export class MenuScene extends Phaser.Scene {
     }
 
     private gotToCreateMapPage() {
-        const sparkHost = 'https://'+window.location.host.replace('play.', '')+'/choose-map.html';
+        //const sparkHost = 'https://'+window.location.host.replace('play.', '')+'/choose-map.html';
+        //TODO fix me: this button can to send us on WorkAdventure BO.
+        const sparkHost = 'https://workadventu.re/getting-started';
         window.open(sparkHost, '_blank');
     }
 
@@ -300,5 +338,20 @@ export class MenuScene extends Phaser.Scene {
         this.closeGameQualityMenu();
         this.closeGameShare();
         this.gameReportElement.close();
+    }
+
+    private toggleFullscreen() {
+        const body = document.querySelector('body')
+        if (body) {
+            if (document.fullscreenElement ?? document.fullscreen) {
+                document.exitFullscreen()
+            } else {
+                body.requestFullscreen();
+            }
+        }
+    }
+
+    public isDirty(): boolean {
+        return false;
     }
 }

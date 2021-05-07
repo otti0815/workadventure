@@ -7,11 +7,11 @@ export const gameReportRessource = 'resources/html/gameReport.html';
 
 export class ReportMenu extends Phaser.GameObjects.DOMElement {
     private opened: boolean = false;
-    
+
     private userId!: number;
     private userName!: string|undefined;
     private anonymous: boolean;
-    
+
     constructor(scene: Phaser.Scene, anonymous: boolean) {
         super(scene, -2000, -2000);
         this.anonymous = anonymous;
@@ -23,7 +23,7 @@ export class ReportMenu extends Phaser.GameObjects.DOMElement {
             const textToHide = this.getChildByID('askActionP') as HTMLElement;
             textToHide.hidden = true;
         }
-        
+
         scene.add.existing(this);
         MenuScene.revealMenusAfterInit(this, gameReportKey);
 
@@ -45,10 +45,10 @@ export class ReportMenu extends Phaser.GameObjects.DOMElement {
             this.close();
             return;
         }
-        
+
         this.userId = userId;
         this.userName = userName;
-        
+
         const mainEl = this.getChildByID('gameReport') as HTMLElement;
         this.x = this.getCenteredX(mainEl);
         this.y = this.getHiddenY(mainEl);
@@ -61,7 +61,7 @@ export class ReportMenu extends Phaser.GameObjects.DOMElement {
 
         this.opened = true;
 
-        gameManager.getCurrentGameScene(this.scene).userInputManager.clearAllKeys();
+        gameManager.getCurrentGameScene(this.scene).userInputManager.disableControls();
 
         this.scene.tweens.add({
             targets: this,
@@ -72,8 +72,8 @@ export class ReportMenu extends Phaser.GameObjects.DOMElement {
     }
 
     public close(): void {
+        gameManager.getCurrentGameScene(this.scene).userInputManager.restoreControls();
         this.opened = false;
-        gameManager.getCurrentGameScene(this.scene).userInputManager.initKeyBoardEvent();
         const mainEl = this.getChildByID('gameReport') as HTMLElement;
         this.scene.tweens.add({
             targets: this,
@@ -82,7 +82,7 @@ export class ReportMenu extends Phaser.GameObjects.DOMElement {
             ease: 'Power3'
         });
     }
-    
+
     //todo: into a parent class?
     private getCenteredX(mainEl: HTMLElement): number {
         return window.innerWidth / 4 - mainEl.clientWidth / 2;
@@ -93,7 +93,7 @@ export class ReportMenu extends Phaser.GameObjects.DOMElement {
     private getCenteredY(mainEl: HTMLElement): number {
         return window.innerHeight / 4 - mainEl.clientHeight / 2;
     }
-    
+
     private toggleBlock(): void {
         !blackListManager.isBlackListed(this.userId) ? blackListManager.blackList(this.userId) : blackListManager.cancelBlackList(this.userId);
         this.close();
@@ -104,13 +104,12 @@ export class ReportMenu extends Phaser.GameObjects.DOMElement {
         gamePError.innerText = '';
         gamePError.style.display = 'none';
         const gameTextArea = this.getChildByID('gameReportInput') as HTMLInputElement;
-        const gameIdUserReported = this.getChildByID('idUserReported') as HTMLInputElement;
-        if(!gameTextArea || !gameTextArea.value ){
+        if(!gameTextArea || !gameTextArea.value){
             gamePError.innerText = 'Report message cannot to be empty.';
             gamePError.style.display = 'block';
             return;
         }
-        gameManager.getCurrentGameScene(this.scene).connection.emitReportPlayerMessage(
+        gameManager.getCurrentGameScene(this.scene).connection?.emitReportPlayerMessage(
             this.userId,
             gameTextArea.value
         );

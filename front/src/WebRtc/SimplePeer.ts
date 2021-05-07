@@ -63,7 +63,7 @@ export class SimplePeer {
     }
 
     public getNbConnections(): number {
-        return this.PeerConnectionArray.size;
+        return this.Users.length;
     }
 
     /**
@@ -82,15 +82,11 @@ export class SimplePeer {
         });
 
         mediaManager.showGameOverlay();
-        mediaManager.getCamera().then(() => {
-
+        mediaManager.getCamera().finally(() => {
             //receive message start
             this.Connection.receiveWebrtcStart((message: UserSimplePeerInterface) => {
                 this.receiveWebrtcStart(message);
             });
-
-        }).catch((err) => {
-            console.error("err", err);
         });
 
         this.Connection.disconnectMessage((data: WebRtcDisconnectMessageInterface): void => {
@@ -230,9 +226,6 @@ export class SimplePeer {
 
             this.closeScreenSharingConnection(userId);
 
-            for (const peerConnectionListener of this.peerConnectionListeners) {
-                peerConnectionListener.onDisconnect(userId);
-            }
             const userIndex = this.Users.findIndex(user => user.userId === userId);
             if(userIndex < 0){
                 throw 'Couln\'t delete user';
@@ -249,6 +242,10 @@ export class SimplePeer {
                 this.closeScreenSharingConnection(userId);
                 this.PeerScreenSharingConnectionArray.delete(userId);
             }
+        }
+
+        for (const peerConnectionListener of this.peerConnectionListeners) {
+            peerConnectionListener.onDisconnect(userId);
         }
     }
 
