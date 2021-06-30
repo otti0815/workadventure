@@ -1,6 +1,6 @@
 import 'phaser';
 import GameConfig = Phaser.Types.Core.GameConfig;
-import "../dist/resources/style/index.scss";
+import "../style/index.scss";
 
 import {DEBUG_MODE, isMobile} from "./Enum/EnvironmentVariable";
 import {LoginScene} from "./Phaser/Login/LoginScene";
@@ -9,11 +9,11 @@ import {SelectCharacterScene} from "./Phaser/Login/SelectCharacterScene";
 import {SelectCompanionScene} from "./Phaser/Login/SelectCompanionScene";
 import {EnableCameraScene} from "./Phaser/Login/EnableCameraScene";
 import {CustomizeScene} from "./Phaser/Login/CustomizeScene";
-import {ResizableScene} from "./Phaser/Login/ResizableScene";
+import WebFontLoaderPlugin from 'phaser3-rex-plugins/plugins/webfontloader-plugin.js';
+import OutlinePipelinePlugin from 'phaser3-rex-plugins/plugins/outlinepipeline-plugin.js';
 import {EntryScene} from "./Phaser/Login/EntryScene";
 import {coWebsiteManager} from "./WebRtc/CoWebsiteManager";
 import {MenuScene} from "./Phaser/Menu/MenuScene";
-import {HelpCameraSettingsScene} from "./Phaser/Menu/HelpCameraSettingsScene";
 import {localUserStore} from "./Connexion/LocalUserStore";
 import {ErrorScene} from "./Phaser/Reconnecting/ErrorScene";
 import {iframeListener} from "./Api/IframeListener";
@@ -21,6 +21,10 @@ import { SelectCharacterMobileScene } from './Phaser/Login/SelectCharacterMobile
 import {HdpiManager} from "./Phaser/Services/HdpiManager";
 import {waScaleManager} from "./Phaser/Services/WaScaleManager";
 import {Game} from "./Phaser/Game/Game";
+import App from './Components/App.svelte';
+import {HtmlUtils} from "./WebRtc/HtmlUtils";
+import WebGLRenderer = Phaser.Renderer.WebGL.WebGLRenderer;
+
 
 const {width, height} = coWebsiteManager.getGameSize();
 
@@ -94,7 +98,7 @@ const config: GameConfig = {
         ErrorScene,
         CustomizeScene,
         MenuScene,
-        HelpCameraSettingsScene],
+    ],
     //resolution: window.devicePixelRatio / 2,
     fps: fps,
     dom: {
@@ -104,6 +108,13 @@ const config: GameConfig = {
         pixelArt: true,
         roundPixels: true,
         antialias: false
+    },
+    plugins: {
+        global: [{
+            key: 'rexWebFontLoader',
+            plugin: WebFontLoaderPlugin,
+            start: true
+        }]
     },
     physics: {
         default: "arcade",
@@ -115,11 +126,11 @@ const config: GameConfig = {
     powerPreference: "low-power",
     callbacks: {
         postBoot: game => {
-            // Commented out to try to fix MacOS bug
-            /*const renderer = game.renderer;
+            // Install rexOutlinePipeline only if the renderer is WebGL.
+            const renderer = game.renderer;
             if (renderer instanceof WebGLRenderer) {
-                renderer.pipelines.add(OutlinePipeline.KEY, new OutlinePipeline(game));
-            }*/
+                game.plugins.install('rexOutlinePipeline', OutlinePipelinePlugin, true);
+            }
         }
     }
 };
@@ -127,19 +138,12 @@ const config: GameConfig = {
 //const game = new Phaser.Game(config);
 const game = new Game(config);
 
-waScaleManager.setScaleManager(game.scale);
+waScaleManager.setGame(game);
 
 window.addEventListener('resize', function (event) {
     coWebsiteManager.resetStyle();
 
     waScaleManager.applyNewSize();
-
-    // Let's trigger the onResize method of any active scene that is a ResizableScene
-    for (const scene of game.scene.getScenes(true)) {
-        if (scene instanceof ResizableScene) {
-            scene.onResize(event);
-        }
-    }
 });
 
 coWebsiteManager.onResize.subscribe(() => {
@@ -147,3 +151,12 @@ coWebsiteManager.onResize.subscribe(() => {
 });
 
 iframeListener.init();
+
+const app = new App({
+    target: HtmlUtils.getElementByIdOrFail('svelte-overlay'),
+    props: {
+        game: game
+    },
+})
+
+export default app
