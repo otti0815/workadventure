@@ -4,7 +4,7 @@ import { isDataLayerEvent } from "../Events/DataLayerEvent";
 import { EnterLeaveEvent, isEnterLeaveEvent } from "../Events/EnterLeaveEvent";
 import { isGameStateEvent } from "../Events/GameStateEvent";
 
-import { IframeApiContribution, sendToWorkadventure } from "./IframeApiContribution";
+import {IframeApiContribution, queryWorkadventure, sendToWorkadventure} from "./IframeApiContribution";
 import { apiCallback } from "./registeredCallbacks";
 
 import type { ITiledMap } from "../../Phaser/Map/ITiledMap";
@@ -31,12 +31,16 @@ interface User {
     tags: string[];
 }
 
+interface TileDescriptor {
+    x: number;
+    y: number;
+    tile: number | string;
+    layer: string;
+}
+
 function getGameState(): Promise<GameStateEvent> {
     if (immutableDataPromise === undefined) {
-        immutableDataPromise = new Promise<GameStateEvent>((resolver, thrower) => {
-            stateResolvers.subscribe(resolver);
-            sendToWorkadventure({ type: "getState", data: null });
-        });
+        immutableDataPromise = queryWorkadventure({ type: "getState", data: undefined });
     }
     return immutableDataPromise;
 }
@@ -62,13 +66,6 @@ export class WorkadventureRoomCommands extends IframeApiContribution<Workadventu
             typeChecker: isEnterLeaveEvent,
             callback: (payloadData) => {
                 leaveStreams.get(payloadData.name)?.next();
-            },
-        }),
-        apiCallback({
-            type: "gameState",
-            typeChecker: isGameStateEvent,
-            callback: (payloadData) => {
-                stateResolvers.next(payloadData);
             },
         }),
         apiCallback({
@@ -127,6 +124,12 @@ export class WorkadventureRoomCommands extends IframeApiContribution<Workadventu
     getCurrentUser(): Promise<User> {
         return getGameState().then((gameState) => {
             return { id: gameState.uuid, nickName: gameState.nickname, tags: gameState.tags };
+        });
+    }
+    setTiles(tiles: TileDescriptor[]) {
+        sendToWorkadventure({
+            type: "setTiles",
+            data: tiles,
         });
     }
 }
